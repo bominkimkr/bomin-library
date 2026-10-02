@@ -547,22 +547,29 @@ $("emailForm").onsubmit = async e => {
 
 $("joinBtn").onclick = async () => {
   if (!sb || !window.TossPayments) return banner("결제는 실제 사이트에서만 열려요.");
+  const { data: { session } } = await sb.auth.getSession();
+  me = session?.user ?? null;
   if (!me){ openM("loginModal"); $("loginMsg").textContent = "멤버십은 로그인 후 시작할 수 있어요."; return; }
-  openM("payModal"); $("payMsg").textContent = "";
+  $("loginModal").hidden = true;
+  openM("payModal"); $("payMsg").textContent = "결제창을 불러오는 중…";
   if (!widgetsReady){
-    widgets = TossPayments(TOSS_CLIENT_KEY).widgets({ customerKey: me.id });
-    await widgets.setAmount({ currency: "KRW", value: 9900 });
-    await Promise.all([
-      widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
-      widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" }),
-    ]);
-    widgetsReady = true;
+    try {
+      widgets = TossPayments(TOSS_CLIENT_KEY).widgets({ customerKey: me.id });
+      await widgets.setAmount({ currency: "KRW", value: 9900 });
+      await Promise.all([
+        widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" }),
+        widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" }),
+      ]);
+      widgetsReady = true;
+    } catch (err) { $("payMsg").textContent = "결제창을 불러오지 못했어요: " + (err?.message || err); return; }
   }
+  $("payMsg").textContent = "";
 };
 $("payBtn").onclick = async () => {
+  if (!widgetsReady){ $("payMsg").textContent = "결제창이 아직 준비되지 않았어요."; return; }
   $("payMsg").textContent = "주문을 만드는 중…";
   const { data, error } = await sb.functions.invoke("pay", { body: { action: "create" } });
-  if (error || !data?.orderId){ $("payMsg").textContent = "주문을 만들지 못했어요. 다시 시도해 주세요."; return; }
+  if (error || !data?.orderId){ let m = ""; try { m = (await error?.context?.json())?.error || ""; } catch(e){} $("payMsg").textContent = "주문을 만들지 못했어요. " + (m || "다시 시도해 주세요."); return; }
   try {
     await widgets.requestPayment({
       orderId: data.orderId, orderName: data.orderName,
