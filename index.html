@@ -361,8 +361,9 @@ footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px}
           <li>✔ 시험 준비 시스템 포함</li>
         </ul>
         <div class="mstat" id="mstat" hidden></div>
-        <button class="btn btn-dark" style="justify-content:center" type="button" id="joinBtn">멤버십 시작하기</button>
-        <small class="fine">지금은 테스트 결제예요. 실제로 돈이 빠져나가지 않아요.</small>
+        <a class="btn btn-dark" style="justify-content:center" id="notifyBtn" href="https://www.instagram.com/bom_in_kr/" target="_blank" rel="noopener">오픈 소식 받기</a>
+        <button class="btn btn-dark" style="justify-content:center" type="button" id="joinBtn" hidden>멤버십 시작하기</button>
+        <small class="fine" id="fineTxt">오픈 날짜는 정해지면 인스타그램에서 먼저 알려드려요.</small>
       </div>
     </div>
   </section>
@@ -499,9 +500,12 @@ const SB_URL = "https://scgkaqmmybjvrafytsfc.supabase.co";
 const SB_KEY = "sb_publishable_qp42hOFNjXFbLdsqaPL79w_1Zc6-KSY";
 const TOSS_CLIENT_KEY = "test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm"; // 토스 문서용 테스트 키 → 실제 오픈 때 교체
 const SITE = location.origin + location.pathname;
+const $ = id => document.getElementById(id);
+let TEST = false;
+try { if (new URLSearchParams(location.search).has("test")) sessionStorage.setItem("bomin-test","1"); TEST = sessionStorage.getItem("bomin-test") === "1"; } catch(e){}
+if (TEST){ $("notifyBtn").hidden = true; $("joinBtn").hidden = false; $("fineTxt").textContent = "🧪 테스트 모드예요. 실제로 돈이 빠져나가지 않아요."; }
 const sb = window.supabase ? window.supabase.createClient(SB_URL, SB_KEY) : null;
 let me = null, widgets = null, widgetsReady = false;
-const $ = id => document.getElementById(id);
 function openM(id){ $(id).hidden = false; }
 function closeM(el){ el.closest(".modal").hidden = true; }
 document.querySelectorAll("[data-close]").forEach(b => b.onclick = () => closeM(b));
